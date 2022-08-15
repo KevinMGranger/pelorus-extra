@@ -31,6 +31,7 @@ class DefaultExporter(Exporter):
 @frozen
 class SourceExporter(Exporter):
     app_file: str
+    source_context_dir: str = field(default="exporters", kw_only=True)
     source_ref: str = "master"
     source_url: str = "https://github.com/konveyor/pelorus"
     extra_env: dict[str, str] = field(factory=dict, kw_only=True)
