@@ -2,10 +2,10 @@
 
 import json
 import subprocess
-from typing import Iterable  # `gh` command if checking for statuses on pr
-from google.cloud import storage  # pip: google-cloud-storage
+from typing import Iterable
+from google.cloud import storage
 
-# import click
+import click
 from dataclasses import dataclass
 import sys
 from pathlib import PurePath
@@ -89,16 +89,24 @@ def get_non_succeeding_checks(pr: str) -> Iterable[PRStatusResult]:
         yield PRStatusResult(**obj)
 
 
-# _, pr, test = sys.argv
+@click.group
+def pr_logs():
+    pass
 
-_, subcommand, *rest = sys.argv
 
-if subcommand == "e2e":
-    pr, test = rest
+@pr_logs.command
+@click.argument("pr")
+@click.argument("test")
+def e2e(pr: str, test: str):
     print(get_e2e_logs(pr, test))
-elif subcommand == "check":
-    (pr,) = rest
+
+
+@pr_logs.command
+@click.argument("pr")
+def check(pr: str):
     for check in get_non_succeeding_checks(pr):
         print(check)
-else:
-    sys.exit(f"unknown subcommand {subcommand}")
+
+
+if __name__ == "__main__":
+    pr_logs()

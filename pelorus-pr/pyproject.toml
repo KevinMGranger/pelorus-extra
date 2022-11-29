@@ -1,3 +1,16 @@
 [project]
-name = "pelorus-pr-logs"
+name = "pelorus-pr"
 description = "view logs and test status for pelorus PRs"
+version = "0.0.1"
+
+dependencies = [
+    "click",
+    "google-cloud-storage"
+]
+
+[project.scripts]
+pelorus-pr = "pr_logs:pr_logs"
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
