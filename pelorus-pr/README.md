@@ -4,7 +4,7 @@
 - [ ] proper setuptools integration
 - [ ] test installing from pip with git url
 - [ ] RELEASE
-- [ ] list failing tests for given PR number
+- [x] list failing tests for given PR number
 - [ ] get logs for unit tests too
 - [ ] list failing tests, checking if a PR is currently checked out
 - [ ] list failing tests, checking if the current branch has an associated PR
