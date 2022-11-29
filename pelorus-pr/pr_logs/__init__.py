@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 
 import json
+import re
 import subprocess
-from typing import Iterable
+from typing import Iterable, Optional
 from google.cloud import storage
 
 import click
@@ -11,7 +12,7 @@ import sys
 from pathlib import PurePath
 
 
-def get_e2e_logs(pr: str, test: str) -> str:
+def get_e2e_log_blob(pr: str, test: str) -> storage.Blob:
     PULLS_DIR = PurePath("pr-logs/pull/konveyor_pelorus")
     TEST_NAME_TEMPLATE = "pull-ci-konveyor-pelorus-master-{test}-e2e-openshift"
 
@@ -28,8 +29,7 @@ def get_e2e_logs(pr: str, test: str) -> str:
     latest_build_id = latest_build_id_blob.download_as_text()
 
     build_log_path = str(artifact_root_dir / latest_build_id / BUILD_LOG_SUBPATH)
-    build_log = bucket.blob(build_log_path).download_as_text()
-    return build_log
+    return bucket.blob(build_log_path)
 
 
 @dataclass
@@ -57,6 +57,39 @@ def _get_pr_ref(pr: str) -> str:
         text=True,
     )
     return subproc.stdout.strip()
+
+
+class NoPrOpenError(Exception):
+    MSG = re.compile(r"^no pull requests found for branch")
+
+    __cause__: subprocess.CalledProcessError
+
+    def __init__(self, called_process_err: subprocess.CalledProcessError):
+        super().__init__(called_process_err.stderr)
+        self.__cause__ = called_process_err
+
+    @property
+    def message(self):
+        return self.__cause__.stderr
+
+
+def _get_current_pr_number() -> str:
+    # TODO: couldn't find one for jenkins pr? are drafts not counted somehow?
+    # even let me open one in the web, but it wouldn't compare properly.
+    # maybe that's because I skipped pushing or something
+    # TODO: can you have multiple PRs per branch?
+    try:
+        return subprocess.run(
+            "gh pr view --json number --jq '.number'".split(),
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout
+    except subprocess.CalledProcessError as e:
+        if NoPrOpenError.MSG.match(e.stderr) is not None:
+            raise NoPrOpenError(e)
+        else:
+            raise
 
 
 def get_non_succeeding_checks(pr: str) -> Iterable[PRStatusResult]:
@@ -95,15 +128,35 @@ def pr_logs():
 
 
 @pr_logs.command
-@click.argument("pr")
-@click.argument("test")
-def e2e(pr: str, test: str):
-    print(get_e2e_logs(pr, test))
+@click.argument("pr_or_test")
+@click.argument("test", required=False)
+@click.option("--view-url", is_flag=True)
+def e2e(pr_or_test: str, test: Optional[str], view_url: bool):
+    # TODO: doc
+    if test is None:
+        try:
+            pr, test = _get_current_pr_number(), pr_or_test
+        except NoPrOpenError as e:
+            sys.exit(e.message)
+    else:
+        pr, test = pr_or_test, test
+
+    blob = get_e2e_log_blob(pr, test)
+
+    if view_url:
+        print(blob.public_url)
+    else:
+        print(blob.download_as_text())
 
 
 @pr_logs.command
-@click.argument("pr")
-def check(pr: str):
+@click.argument("pr", required=False)
+def check(pr: Optional[str]):
+    try:
+        pr = pr if pr is not None else _get_current_pr_number()
+    except NoPrOpenError as e:
+        sys.exit(e.message)
+
     for check in get_non_succeeding_checks(pr):
         print(check)
 
