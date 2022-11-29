@@ -1,9 +1,13 @@
+# Installation
+```console
+# pip install 'git+https://github.com/kevinmgranger/pelorus-extra#subdirectory=pelorus-pr'
+```
 # Goals
 
 - [x] access e2e logs for a given PR number and test name
 - [x] click
 - [x] proper setuptools integration
-- [ ] test installing from pip with git url
+- [x] test installing from pip with git url
 - [ ] RELEASE
 - [x] list failing tests for given PR number
 - [ ] get logs for unit tests too
