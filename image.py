@@ -2,7 +2,7 @@ from copy import deepcopy
 from hashlib import sha256
 from typing import Any, Generic, Sequence, TypeVar, Union
 from pelorus.utils import split_path
-from datetime import datetime
+from datetime import datetime, timezone
 from committime.app import DEFAULT_COMMIT_DATE_FORMAT
 from uuid import uuid4
 
@@ -254,18 +254,28 @@ del missing_time.commit_time_from_annotation
 
 
 proper_label = named("label")
-proper_label.commit_time_from_label = datetime.now().strftime(
+proper_label.commit_time_from_label = datetime.now(timezone.utc).strftime(
     DEFAULT_COMMIT_DATE_FORMAT
 )
 
 proper_anno = named("anno")
-proper_anno.commit_time_from_annotation = datetime.now().strftime(
+proper_anno.commit_time_from_annotation = datetime.now(timezone.utc).strftime(
     DEFAULT_COMMIT_DATE_FORMAT
 )
 
-images = [
-    image.spec
-    for image in (missing_name, missing_ref, missing_time, proper_label, proper_anno)
-]
+images = dict(
+    kind="List",
+    apiVersion="v1",
+    items=[
+        image.spec
+        for image in (
+            missing_name,
+            missing_ref,
+            missing_time,
+            proper_label,
+            proper_anno,
+        )
+    ],
+)
 
 json.dump(images, sys.stdout, indent=2)
