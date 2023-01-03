@@ -253,17 +253,18 @@ del missing_time.commit_time_from_label
 del missing_time.commit_time_from_annotation
 
 
+now = datetime.now(timezone.utc)
+now_str = now.strftime(DEFAULT_COMMIT_DATE_FORMAT)
+
 proper_label = named("label")
-proper_label.commit_time_from_label = datetime.now(timezone.utc).strftime(
-    DEFAULT_COMMIT_DATE_FORMAT
-)
+proper_label.commit_time_from_label = now_str
 
 proper_anno = named("anno")
-proper_anno.commit_time_from_annotation = datetime.now(timezone.utc).strftime(
-    DEFAULT_COMMIT_DATE_FORMAT
-)
+proper_anno.commit_time_from_annotation = now_str
 
 images = dict(
+    NOW_STR_REMOVEME=now_str,
+    NOW_TIMESTAMP_REMOVEME=now.timestamp(),
     kind="List",
     apiVersion="v1",
     items=[
